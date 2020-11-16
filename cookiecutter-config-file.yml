@@ -1,0 +1,10 @@
+# This file contains values from Cookiecutter
+
+default_context:
+  project_name: "anilist.io"
+  project_description: "Asyncio-based wrapper to interact with Anilist API"
+  organization: "demon-rem"
+  license: "MIT"
+  version: "0.1.0"
+  github_name: "demon-rem"
+  email: "demonicrem@gmail.com"
