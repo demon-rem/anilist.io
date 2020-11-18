@@ -29,13 +29,13 @@ classifiers = [  # Update me
 
 [tool.poetry.scripts]
 # Entry points for the package https://python-poetry.org/docs/pyproject/#scripts
-"anilist" = "src.__main__:app"
+"anilist" = "anilist.__main__:app"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-importlib_metadata = "^2.0.0"
-typer = {extras = ["all"], version = "^0.3.2"}
-rich = "^9.2.0"
+aiohttp = "^3.7.2"
+cchardet = "^2.1.7"
+aiodns = "^2.0.0"
 
 [tool.poetry.dev-dependencies]
 darglint = "^1.5.4"
@@ -50,6 +50,7 @@ pylint = "^2.5.3"
 pydocstyle = "^5.0.2"
 pre-commit = "^2.7.1"
 pytest-cov = "^2.10.1"
+vcrpy = "^4.1.1"
 
 [tool.black]
 # https://github.com/psf/black

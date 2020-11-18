@@ -107,7 +107,7 @@ check-safety:
 	@echo -e "\n\nSafety Check: "
 	@$(SAFETY_COMMAND_FLAG)poetry run safety check --full-report
 	@echo -e "\n\nBandIt: "
-	@$(BANDIT_COMMAND_FLAG)poetry run bandit -ll -r src/
+	@$(BANDIT_COMMAND_FLAG)poetry run bandit -ll -r anilist/
 
 .PHONY: check-style
 check-style:
@@ -115,11 +115,12 @@ check-style:
 	@$(BLACK_COMMAND_FLAG)poetry run black --config pyproject.toml --diff --check ./
 	@$(DARGLINT_COMMAND_FLAG)poetry run darglint -v 2 **/*.py
 	@$(ISORT_COMMAND_FLAG)poetry run isort --settings-path pyproject.toml --check-only **/*.py
-	@$(MYPY_COMMAND_FLAG)poetry run mypy --config-file setup.cfg src tests/**.py
+	@echo -e "\nMyPy Check:"
+	@$(MYPY_COMMAND_FLAG)poetry run mypy --config-file setup.cfg anilist tests/**.py
+	@echo
 
 .PHONY: codestyle
 codestyle:
-	@echo -e "\n\n"
 	@poetry run pyupgrade --py37-plus **/*.py
 	@poetry run isort --settings-path pyproject.toml **/*.py
 	@echo -e "\nBlack:"
@@ -132,8 +133,8 @@ test:
 	@poetry run pytest
 	@echo -e "\n"
 
-.PHONY: lint
-lint: check-safety check-style test
+.PHONY: test-suite
+test-suite: check-safety check-style test
 
 # Example: make docker VERSION=latest
 # Example: make docker IMAGE=some_name VERSION=0.1.0
@@ -163,3 +164,4 @@ clean-cache:
 	@rm -rf .mypy_cache/
 	@rm -rf .pytest_cache/
 	@rm -rf .coverage
+	@rm -rf coverage.xml
