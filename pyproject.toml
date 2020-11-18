@@ -33,7 +33,7 @@ classifiers = [  # Update me
 
 [tool.poetry.dependencies]
 python = "^3.7"
-aiohttp = "^3.7.2"
+aiohttp = "^3.7.3"
 cchardet = "^2.1.7"
 aiodns = "^2.0.0"
 
