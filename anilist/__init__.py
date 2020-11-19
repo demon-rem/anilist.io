@@ -1,2 +1,3 @@
+from anilist.client.anilist_client import Anilist
+
 from . import errors
-from .Anilist import Anilist

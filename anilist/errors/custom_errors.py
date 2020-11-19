@@ -13,8 +13,8 @@ class BaseError(Exception):
         Args:
             status: Integer containing the error-code.
             message: String containing error message.
-            locations: Dictionary of values/pairs specifying the line/column of where the error
-            occurred.
+            locations: Dictionary of values/pairs specifying the line/column of where t
+            he error occurred.
         """
 
         if (
@@ -38,7 +38,8 @@ class BaseError(Exception):
 
 class APIError(BaseError):
     """
-    Enacts the base error, will be thrown if an API call is made with incorrect parameters.
+    Enacts the base error, will be thrown if an API call is made with incorrect
+    parameters.
     """
 
     def __init__(self, status: int, message: str, locations: Optional[Dict[str, int]]):

@@ -6,13 +6,10 @@ from random import randint
 from anilist import Anilist
 from anilist.errors import APIError
 from pytest import raises
-from tests import LOGGER
 from tests.commons import bruteforce_exceptions
 
 
 def test_base_error():
-    LOGGER.info(f"Checking errors - `{APIError.__name__}`")
-
     # Bruteforcing type-check exception(s)
     bruteforce_exceptions(APIError, data=["message", None, int(2)])
 
