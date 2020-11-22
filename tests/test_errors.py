@@ -6,12 +6,13 @@ from random import randint
 from anilist import Anilist
 from anilist.errors import APIError
 from pytest import raises
-from tests.commons import bruteforce_exceptions
+from tests.commons import bruteforce_exception
 
 
+# noinspection PyTypeChecker
 def test_base_error():
     # Bruteforcing type-check exception(s)
-    bruteforce_exceptions(APIError, data=["message", None, int(2)])
+    bruteforce_exception(TypeError, APIError, param=["message", None, int(2)])
 
     # Adding (another) test because without this code coverage drops (stupidly)
     with raises(TypeError):
