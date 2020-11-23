@@ -39,7 +39,7 @@ repos:
 
   - repo: local
     hooks:
-      - id: poetry
-        name: poetry
-        entry: poetry export --dev --output dev-requirements.txt
+      - id: commit-chores
+        name: commit-chores
+        entry: bash commit_chores.sh
         language: system
