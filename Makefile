@@ -165,3 +165,8 @@ clean-cache:
 	@rm -rf .pytest_cache/
 	@rm -rf .coverage
 	@rm -rf coverage.xml
+
+.PHONY: mypy
+mypy:
+	@echo -e "\n\tRunning check with MyPy"
+	@$(MYPY_COMMAND_FLAG)poetry run mypy --config-file setup.cfg anilist tests/**.py

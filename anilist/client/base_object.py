@@ -1,10 +1,14 @@
-# Defines the base object, an abstract class that will define the basic behaviour of all
-# classes that derive from it.
+"""
+Defines the base object, an abstract class that will define the basic behaviour of all
+classes that derive from it.
+
+Used to define the common behaviour among all objects.
+"""
 
 from abc import ABC, abstractmethod
-from enum import EnumMeta, Flag
+from ast import literal_eval
 from json import dumps as prettify_json
-from typing import Any, Union, Dict, Optional
+from typing import Any, Union, Dict
 
 
 class BaseObject(ABC):
@@ -21,6 +25,7 @@ class BaseObject(ABC):
             String containing prettified-version of the JSON data.
         """
 
+        print(f"Calling stringify for `{self.__class__.__name__}`")
         if indent is not None and not isinstance(indent, int):
             raise TypeError
 
@@ -30,6 +35,8 @@ class BaseObject(ABC):
         return prettify_json(
             obj={
                 f"{key}": value
+                if not isinstance(value, BaseObject)
+                else literal_eval(value.stringify())
                 for key, value in self.__dict__.items()
                 # Appending any instance variable if it does not start with an
                 # underscore - private and protected variables are not exposed.
@@ -57,53 +64,3 @@ class BaseObject(ABC):
         """
 
         raise NotImplementedError("Direct call to abstract method")
-
-
-class MetaEnum(ABC, EnumMeta):
-    """
-    Metaclass just to be able to create an enum with abstract methods - pretty sure
-    that there is a way to directly create an enum with abstract methods, but too tired
-    to look for that now :(
-    """
-
-    pass
-
-
-class BaseEnum(Flag, metaclass=EnumMeta):
-    """
-    A custom implementation of an enum similar to `BaseObject`.
-
-    Includes an abstract `stringify` method.
-
-    Notes:
-        By default, while making the API call, the name of the enum entry will be
-        converted into an upper-case string and used in the API call.
-
-        As such, child classes need to name their entries such that they can be
-        directly used while making the API call.
-
-        Alternatively, if any child-class wishes to defer this default behaviour, it
-        can alternatively override the `translate` property with a custom implementation
-        to map an enum entry to a string that will be used with API calls.
-    """
-
-    @abstractmethod
-    def stringify(self, indent: Union[int, None] = 4) -> Optional[str]:
-        raise NotImplementedError
-
-    @property
-    def translate(self):
-        """
-        Maps an enum key to an appropriate value. Used to convert an enum entry into a
-        string - used while making the final API call.
-
-        By default, will simply convert the name of the enum value into an upper-case
-        string.
-
-        Any child-class that wants to modify this behaviour can override this method.
-
-        Returns:
-            String containing the name of the enum entry in upper case.
-        """
-
-        return self.name.upper()

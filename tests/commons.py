@@ -14,8 +14,8 @@ def bruteforce_exception(
     Type-check a single method against variable input from a list of (in)valid inputs.
 
     Notes:
-        This method will accept a list of **wrong** inputs, rotate them one by one, and
-        feed them to the method - expecting to raise an error with every iteration.
+        This method will accept a list of **wrong** inputs, rotate the list one by one,
+        and feed the list of inputs to the method - raising an error at every iteration.
 
         This ensures that each method will work only with a particular type of input -
         if the input is incorrect, the method will raise an error.
@@ -23,17 +23,17 @@ def bruteforce_exception(
     Args:
         exception: The exception that will be raised.
         method: The method to be tested against.
-        param: A tuple of data
+        param: A tuple of data. The original format will not be used, from the beginning
+            it will be rotated by one.
     """
 
     # Convert the data into a deque - using this because it can be directly rotated.
     param = deque(param)
 
-    for i in range(len(param)):
+    for i in range(len(param) - 1):
+        param.rotate(+1)
         with _raises(exception):
-            method(param)
-
-        param.rotate(-1)
+            method(*list(param))
 
 
 def catch(exception: Any, method: Any, *args: Any):

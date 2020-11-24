@@ -4,6 +4,7 @@ from __future__ import annotations
 from json import loads as json_load
 from typing import Union, Dict, Any
 
+from . import MediaData
 from ..client.base_object import BaseObject
 
 
@@ -63,4 +64,60 @@ class FuzzyDate(BaseObject):
         return (
             f"{str(self.year).zfill(4)}{str(self.month).zfill(2)}"
             f"{str(self.day).zfill(2)}"
+        )
+
+
+class AiringSchedule(BaseObject):
+    def __init__(
+        self,
+        airing_id: int,
+        airing_at: int,
+        time_left: int,
+        episode: int,
+        media_id: int,
+        media: MediaData,
+    ):
+        """
+        Media airing schedule
+
+        Args:
+            airing_id: Id of the airing schedule item
+            airing_at: The time at which the episode airs
+            time_left: Seconds remaining till the airing of the episode starts
+            episode: The episode number which is to be aired
+            media_id: Associated media id of the airing episode
+            media: The media associated with the airing episode
+        """
+
+        # Type-check
+        if not all(
+            isinstance(x, int)
+            for x in (airing_id, airing_at, time_left, episode, media_id)
+        ) or not isinstance(media, MediaData):
+            raise TypeError
+
+        self.id = airing_id
+        self.airingAt = airing_at
+        self.timeUntilAiring = time_left
+        self.episode = episode
+        self.mediaId = media_id
+        self.media = media
+
+    @staticmethod
+    def initialize(data: Union[str, Dict[Any, Any]]) -> AiringSchedule:
+        if not isinstance(data, (str, dict)):
+            raise TypeError
+
+        if isinstance(data, str):
+            final_data = json_load(data)
+        else:
+            final_data = data
+
+        return AiringSchedule(
+            airing_id=final_data["id"],
+            airing_at=final_data["airingAt"],
+            time_left=final_data["timeUntilAiring"],
+            episode=final_data["episode"],
+            media_id=final_data["mediaId"],
+            media=MediaData.initialize(final_data["media"]),
         )

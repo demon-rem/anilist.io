@@ -1,11 +1,12 @@
 # Tests all the base objects.
 
-from typing import Any, Dict
-
+from inspect import getmembers, isabstract, isclass
 from json import loads
 
 from pytest import raises
 from tests.commons import bruteforce_exception, catch
+
+from . import LOGGER
 
 
 def test_base_object():
@@ -40,7 +41,7 @@ def test_base_object():
 def test_base_enum():
     from enum import auto
 
-    from anilist.client.base_object import BaseEnum
+    from anilist.client import BaseEnum
 
     # Making the abstract class forget it has any abstract methods.
     BaseEnum.__abstractmethods__ = set()
@@ -51,6 +52,16 @@ def test_base_enum():
 
     child = Child(1)  # Will map to the only value in the enum - `test_val`
     catch(NotImplementedError, child.stringify)
+
+    # Type-checking the map function
+    for var in [(None, None), (2, 2.0), ("", {}), ("a", "a")]:
+        catch(TypeError, child.map, *var)
+
+    # Ensuring that a key that doesn't map raises an error.
+    catch(ValueError, child.map, Child, "this-key-won't-map")
+
+    # A valid key can be mapped
+    assert child.test_val == child.map(Child, Child.test_val.translate)
 
 
 # noinspection PyTypeChecker
@@ -70,28 +81,12 @@ def test_user_avatar():
         large_avatar="large avatar link", medium_avatar="medium avatar link"
     )
 
-    # Validating the result of stringify
-    result = avatar.stringify()
-    assert isinstance(result, str)
-
-    # Using this result to create an instance of the class, and comparing them
-    new_val = avatar.initialize(result)
-    assert isinstance(new_val, UserAvatar)
-    assert new_val.large == avatar.large
-    assert new_val.medium == avatar.medium
-
-    with raises(TypeError):
-        UserAvatar.initialize(None)
-
-    # Testing the same using a dictionary - for this using `result` from above, and
-    # mapping it to be a dictionary.
-    del new_val
-    new_val: Dict[str, Any] = loads(result)
-
-    # Type checking the result - as the `initialize` method internally delegates
-    # both string and dict to dict, and then uses them, checking variables individually
-    # will be a waste
-    assert isinstance(UserAvatar.initialize(new_val), UserAvatar)
+    # Validating the result of stringify with the result of initialize
+    assert (
+        avatar.stringify()
+        == UserAvatar.initialize(avatar.stringify()).stringify()
+        == UserAvatar.initialize(loads(avatar.stringify())).stringify()
+    )
 
 
 def test_fuzzy_date():
@@ -110,35 +105,63 @@ def test_fuzzy_date():
     assert date.fuzz == "19900013"
 
     # Attempting to create another fuzzy-date object by fetching JSON from the first.
-    new_date = FuzzyDate.initialize(date.stringify())
-    assert new_date.day == date.day
-    assert new_date.month == date.month
-    assert new_date.year == date.year
-
-    dict_data = loads(date.stringify())
-    new_date = FuzzyDate.initialize(dict_data)
-    assert new_date.day == date.day
-    assert new_date.month == date.month
-    assert new_date.year == date.year
+    assert (
+        date.stringify()
+        == FuzzyDate.initialize(date.stringify()).stringify()
+        == FuzzyDate.initialize(loads(date.stringify())).stringify()
+    )
 
     # Ensuring that two digit numbers are auto-mapped.
     temp = FuzzyDate(year=13)
     assert temp.year == 2013
 
 
+def test_airing():
+    from anilist.types import AiringSchedule, MediaData
+
+    # Type-check
+    bruteforce_exception(TypeError, AiringSchedule, param=[None, 2, 3, 4, 5, None])
+
+    schedule = AiringSchedule(
+        airing_id=10,
+        airing_at=10,
+        time_left=10,
+        episode=10,
+        media_id=19,
+        media=MediaData(10),
+    )
+
+    # Verifying `initialize` works with dictionary as well as string.
+    assert (
+        schedule.stringify()
+        == AiringSchedule.initialize(schedule.stringify()).stringify()
+        == AiringSchedule.initialize(loads(schedule.stringify())).stringify()
+    )
+
+
 def test_media_enums():
     from anilist.types import (
         MediaFormat,
+        MediaRankType,
         MediaSeason,
         MediaSort,
         MediaSource,
         MediaStatus,
+        MediaType,
     )
 
     # Iterating through all entries present in the enum, asserting that stringify
     # method works for them, `__members__` returns a dictionary of name - in string
     # and the value, for every value present in the enum.
-    for x in (MediaSeason, MediaFormat, MediaStatus, MediaSource, MediaSort):
+    for x in (
+        MediaSeason,
+        MediaFormat,
+        MediaStatus,
+        MediaSource,
+        MediaSort,
+        MediaType,
+        MediaRankType,
+    ):
         for enum_str, enum in x.__members__.items():
             if isinstance(enum, MediaSeason):
                 key = "season"
@@ -150,6 +173,8 @@ def test_media_enums():
                 key = "source"
             elif isinstance(enum, MediaSeason):
                 key = "season"
+            elif isinstance(enum, (MediaType, MediaRankType)):
+                key = "type"
             elif isinstance(enum, MediaSort):
                 catch(NotImplementedError, enum.stringify)
                 continue  # Jump to the next iteration.
@@ -158,3 +183,54 @@ def test_media_enums():
 
             assert isinstance(enum.stringify(), str)
             assert enum.stringify() == f'"{key}": "{enum.translate}"'
+
+
+def test_generic_objects():
+    # Performs a test on all (public) classes that derive from `BaseObject`.
+    # Tests for the common functionality.
+
+    from anilist import types
+    from anilist.client import BaseObject
+
+    LOGGER.info(f"Running generic tests on children of base class")
+
+    child_class: BaseObject
+    class_name: str
+
+    # Looping over all objects present in the `types` module, checking if the object
+    # is a class, derives from BaseClass and ensuring that it isn't abstract, if all
+    # these flags pass, moving on to running generic tests on the object.
+    for class_name, child_class in getmembers(
+        types, lambda o: isclass(o) and issubclass(o, BaseObject) and not isabstract(o)
+    ):
+        # Child class will be a tuple, with the first element in the tuple being a
+        # string containing the name of the class, and the second element in the tuple
+        # being the actual class object against which the tests are to be run.
+        LOGGER.info(f"Generic testing; `{class_name}`")
+
+        for var in (None, 3, 2.0, [], ()):
+            # Ensuring that data type other than a dictionary and a string are rejected.
+            catch(TypeError, child_class.initialize, var)
+
+
+# noinspection PyTypeChecker
+def test_media_data():
+    from anilist.types.media_data import (
+        MediaExternalLink,
+        MediaPoster,
+        MediaRank,
+        MediaStreamingEpisode,
+        MediaTag,
+        MediaTitle,
+        MediaTrailer,
+    )
+
+    bruteforce_exception(TypeError, MediaTitle, param=[None, "", "", ""])
+    bruteforce_exception(TypeError, MediaTrailer, param=[None, "", ""])
+    bruteforce_exception(TypeError, MediaPoster, param=("", "", "", None))
+    bruteforce_exception(TypeError, MediaTag, param=(2, "", "", "", 3, "", None, None))
+    bruteforce_exception(TypeError, MediaExternalLink, param=(None, "", ""))
+    bruteforce_exception(TypeError, MediaStreamingEpisode, param=(None, "", "", ""))
+    bruteforce_exception(
+        TypeError, MediaRank, param=(None, None, "", None, 2, "", False, "")
+    )
