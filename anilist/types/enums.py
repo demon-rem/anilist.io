@@ -160,3 +160,16 @@ class MediaRankType(BaseEnum):
 
     RATED = auto()
     POPULAR = auto()
+
+
+class MediaListStatus(BaseEnum):
+    """
+    Enum mapping the watching/reading status in media list
+    """
+
+    CURRENT = auto()
+    PLANNING = auto()
+    COMPLETED = auto()
+    DROPPED = auto()
+    PAUSED = auto()
+    REPEATING = auto()

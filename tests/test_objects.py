@@ -200,18 +200,23 @@ def test_generic_objects():
 
 # noinspection PyTypeChecker
 def test_media_data():
-    from anilist.types.media_data import (
+    from anilist.types import (
         MediaData,
         MediaExternalLink,
         MediaFormat,
+        MediaListStatus,
         MediaPoster,
         MediaRank,
         MediaRankType,
         MediaSeason,
+        MediaStats,
+        MediaStatus,
         MediaStreamingEpisode,
         MediaTag,
         MediaTitle,
         MediaTrailer,
+        ScoreDistribution,
+        StatusDistribution,
     )
 
     bruteforce_exception(TypeError, MediaTitle, param=[None, "", "", ""])
@@ -222,8 +227,22 @@ def test_media_data():
     bruteforce_exception(TypeError, MediaExternalLink, param=(None, "", ""))
     bruteforce_exception(TypeError, MediaStreamingEpisode, param=(None, "", "", ""))
     bruteforce_exception(TypeError, MediaData, param=(""))
+    bruteforce_exception(TypeError, ScoreDistribution, param=[None, 10])
     bruteforce_exception(
         TypeError, MediaRank, param=(None, None, "", None, 2, "", False, "")
+    )
+
+    bruteforce_exception(
+        TypeError,
+        MediaStats,
+        param=[
+            ScoreDistribution(1, 2),
+            StatusDistribution(MediaListStatus.CURRENT, 12),
+        ],
+    )
+
+    bruteforce_exception(
+        TypeError, StatusDistribution, param=[MediaStatus.FINISHED, None]
     )
 
     assert check_initialize(MediaTitle("romaji", "english", "native", "user_preferred"))
@@ -231,7 +250,8 @@ def test_media_data():
     assert check_initialize(MediaPoster("large", "medium", "color", "extra_large"))
     assert check_initialize(MediaExternalLink(10, "link_url", "site_url"))
     assert check_initialize(MediaStreamingEpisode("title", "thumbnail", "url", "site"))
-    assert check_initialize(MediaData(13))
+    assert check_initialize(ScoreDistribution(13, 25))
+    assert check_initialize(StatusDistribution(MediaListStatus.CURRENT, 12))
     assert check_initialize(
         MediaRank(
             12,
@@ -242,6 +262,13 @@ def test_media_data():
             MediaSeason.WINTER,
             False,
             "",
+        )
+    )
+
+    assert check_initialize(
+        MediaStats(
+            [ScoreDistribution(15, 20)],
+            [StatusDistribution(MediaListStatus.PAUSED, 20)],
         )
     )
 

@@ -7,10 +7,49 @@ Used to define the common behaviour among all objects.
 
 from abc import ABC, abstractmethod
 from ast import literal_eval
-from enum import Enum
-from . import BaseEnum
+from json import JSONEncoder
 from json import dumps as prettify_json
 from typing import Any, Union, Dict
+
+from . import BaseEnum
+
+
+class _CustomEncoder(JSONEncoder):
+    """
+    Implementing a custom encoder to encode a classes into a a printable string.
+
+    Depending on the type of variable encountered, behaviour of the encoder will vary
+    to ensure that the final JSON structure maps all the variables present in each
+    object.
+    """
+
+    def default(self, o: Any) -> Any:
+        if isinstance(o, (int, str, list, dict, tuple, float)):
+            # In case of primitive data types, using the built-in encoder.
+            #
+            # In case of complex datatype, i.e. list/dictionary/tuple, the
+            # encoder will iterate over each element present in the structure, calling
+            # this method for every object encountered - ensuring that the
+            # custom implementation works with iterable data types as well.
+            return JSONEncoder.default(self=self, o=o)
+        if isinstance(o, BaseEnum):
+            # If the object is derived from an enum, calling the `stringify()`
+            # method on this - not using `literal_eval` as the result will simply
+            # be a string.
+            return o.stringify()
+        elif isinstance(o, BaseObject):
+            # If the object is derived from `BaseObject`, calling the `stringify()`
+            # method on the object to get its string representation - the response
+            # will contain escape sequences (such as "\n"), using `literal_eval` to
+            # convert them into a printable string.
+            return literal_eval(o.stringify())
+        else:
+            Warning(
+                f"Error; Unexpected object of type `{type(o)}` encountered. Unable "
+                f"to encode it into a string"
+            )
+
+            return f"<error>"
 
 
 class BaseObject(ABC):
@@ -35,20 +74,8 @@ class BaseObject(ABC):
         # the value in the dictionary. Then, converting this into a JSON response
         return prettify_json(
             obj={
-                f"{key}": value
                 # Allowing the JSON library to automatically map primitive types
-                if isinstance(value, (int, str, list, dict, tuple))
-                # If the object is derived from `BaseObject`, calling the `stringify()`
-                # method on the object to get its string representation - the response
-                # will contain escape sequences (such as "\n"), using `literal_eval` to
-                # convert them into a printable string.
-                else literal_eval(value.stringify()) if isinstance(value, BaseObject)
-                # If the object is derived from an enum, calling the `stringify()`
-                # method on this - not using `literal_eval` as the result will simply
-                # be a string.
-                else value.stringify() if isinstance(value, BaseEnum)
-                # If the flow-of-control reaches this part, adding this as an error
-                else f"Error: `{type(value)}` has no method `stringify()`"
+                f"{key}": value
                 for key, value in self.__dict__.items()
                 # Appending any instance variable if it does not start with an
                 # underscore - private and protected variables are not exposed.
@@ -56,6 +83,7 @@ class BaseObject(ABC):
             },
             indent=indent,
             sort_keys=True,
+            cls=_CustomEncoder,  # Using custom-encoder to handle complex data types
         )
 
     @staticmethod

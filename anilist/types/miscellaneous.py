@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 from json import loads as json_load
-from typing import Union, Dict, Any
+from typing import Union, Dict, Any, Optional
 
-from . import MediaData
+from . import MediaListStatus
 from ..client.base_object import BaseObject
 
 
@@ -75,7 +75,7 @@ class AiringSchedule(BaseObject):
         time_left: int,
         episode: int,
         media_id: int,
-        media: MediaData,
+        media: Optional[BaseObject] = None,
     ):
         """
         Media airing schedule
@@ -93,7 +93,7 @@ class AiringSchedule(BaseObject):
         if not all(
             isinstance(x, int)
             for x in (airing_id, airing_at, time_left, episode, media_id)
-        ) or not isinstance(media, MediaData):
+        ) or (media is not None and not isinstance(media, BaseObject)):
             raise TypeError
 
         self.id = airing_id
@@ -108,6 +108,9 @@ class AiringSchedule(BaseObject):
         if not isinstance(data, (str, dict)):
             raise TypeError
 
+        # Internal import to avoid circular dependency.
+        from . import MediaData
+
         if isinstance(data, str):
             final_data = json_load(data)
         else:
@@ -120,4 +123,70 @@ class AiringSchedule(BaseObject):
             episode=final_data["episode"],
             media_id=final_data["mediaId"],
             media=MediaData.initialize(final_data["media"]),
+        )
+
+
+class ScoreDistribution(BaseObject):
+    def __init__(self, score: int, amount: int):
+        """
+
+        A users list score distribution.
+
+        Args:
+            score: Integer containing the current score.
+            amount: Amount of list entries with this score.
+        """
+
+        if not all(isinstance(x, int) for x in (score, amount)):
+            raise TypeError
+
+        self.score = score
+        self.amount = amount
+
+    @staticmethod
+    def initialize(data: Union[str, Dict[Any, Any]]) -> Any:
+        if not isinstance(data, (dict, str)):
+            raise TypeError
+
+        if isinstance(data, str):
+            final_data = json_load(data)
+        else:
+            final_data = data
+
+        return ScoreDistribution(score=final_data["score"], amount=final_data["amount"])
+
+
+class StatusDistribution(BaseObject):
+    def __init__(self, media_status: MediaListStatus, amount: int):
+        """
+        Distribution of the watching/reading status of media or a users list.
+
+        Args:
+            media_status: The time when the activity took place - Unix timestamp.
+            amount: The number of entries with this status.
+        """
+
+        if not isinstance(media_status, MediaListStatus) or not isinstance(amount, int):
+            import logging
+
+            logging.info(f"{type(media_status)} \t - {media_status}")
+
+            raise TypeError
+
+        self.status = media_status
+        self.amount = amount
+
+    @staticmethod
+    def initialize(data: Union[str, Dict[Any, Any]]) -> Any:
+        if not isinstance(data, (str, dict)):
+            raise TypeError
+
+        if isinstance(data, str):
+            final_data = json_load(data)
+        else:
+            final_data = data
+
+        return StatusDistribution(
+            media_status=MediaListStatus.map(MediaListStatus, final_data["status"]),
+            amount=final_data["amount"],
         )
