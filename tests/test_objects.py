@@ -4,7 +4,7 @@ from inspect import getmembers, isabstract, isclass
 from json import loads
 
 from pytest import raises
-from tests.commons import bruteforce_exception, catch
+from tests.commons import bruteforce_exception, catch, check_initialize
 
 from . import LOGGER
 
@@ -51,7 +51,6 @@ def test_base_enum():
         test_val = auto()
 
     child = Child(1)  # Will map to the only value in the enum - `test_val`
-    catch(NotImplementedError, child.stringify)
 
     # Type-checking the map function
     for var in [(None, None), (2, 2.0), ("", {}), ("a", "a")]:
@@ -163,26 +162,12 @@ def test_media_enums():
         MediaRankType,
     ):
         for enum_str, enum in x.__members__.items():
-            if isinstance(enum, MediaSeason):
-                key = "season"
-            elif isinstance(enum, MediaFormat):
-                key = "format"
-            elif isinstance(enum, MediaStatus):
-                key = "status"
-            elif isinstance(enum, MediaSource):
-                key = "source"
-            elif isinstance(enum, MediaSeason):
-                key = "season"
-            elif isinstance(enum, (MediaType, MediaRankType)):
-                key = "type"
-            elif isinstance(enum, MediaSort):
+            if isinstance(enum, MediaSort):
                 catch(NotImplementedError, enum.stringify)
                 continue  # Jump to the next iteration.
-            else:
-                raise ValueError(f"Unexpected key-type in test cases: {type(enum)}")
 
             assert isinstance(enum.stringify(), str)
-            assert enum.stringify() == f'"{key}": "{enum.translate}"'
+            assert enum.stringify() == enum.translate
 
 
 def test_generic_objects():
@@ -216,9 +201,13 @@ def test_generic_objects():
 # noinspection PyTypeChecker
 def test_media_data():
     from anilist.types.media_data import (
+        MediaData,
         MediaExternalLink,
+        MediaFormat,
         MediaPoster,
         MediaRank,
+        MediaRankType,
+        MediaSeason,
         MediaStreamingEpisode,
         MediaTag,
         MediaTitle,
@@ -227,10 +216,35 @@ def test_media_data():
 
     bruteforce_exception(TypeError, MediaTitle, param=[None, "", "", ""])
     bruteforce_exception(TypeError, MediaTrailer, param=[None, "", ""])
-    bruteforce_exception(TypeError, MediaPoster, param=("", "", "", None))
+    bruteforce_exception(TypeError, MediaPoster, param=("", "", 2, ""))
+    bruteforce_exception(TypeError, MediaPoster, param=("", "", 2, None))
     bruteforce_exception(TypeError, MediaTag, param=(2, "", "", "", 3, "", None, None))
     bruteforce_exception(TypeError, MediaExternalLink, param=(None, "", ""))
     bruteforce_exception(TypeError, MediaStreamingEpisode, param=(None, "", "", ""))
+    bruteforce_exception(TypeError, MediaData, param=(""))
     bruteforce_exception(
         TypeError, MediaRank, param=(None, None, "", None, 2, "", False, "")
+    )
+
+    assert check_initialize(MediaTitle("romaji", "english", "native", "user_preferred"))
+    assert check_initialize(MediaTrailer("trailer_id", "test_site", "thumbnail"))
+    assert check_initialize(MediaPoster("large", "medium", "color", "extra_large"))
+    assert check_initialize(MediaExternalLink(10, "link_url", "site_url"))
+    assert check_initialize(MediaStreamingEpisode("title", "thumbnail", "url", "site"))
+    assert check_initialize(MediaData(13))
+    assert check_initialize(
+        MediaRank(
+            12,
+            10,
+            MediaRankType.POPULAR,
+            MediaFormat.MOVIE,
+            1992,
+            MediaSeason.WINTER,
+            False,
+            "",
+        )
+    )
+
+    assert check_initialize(
+        MediaTag(13, "name", "description", "category", 10, False, True, False)
     )

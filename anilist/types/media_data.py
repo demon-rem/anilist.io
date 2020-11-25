@@ -8,12 +8,12 @@ from ..client import BaseObject
 
 
 class MediaTitle(BaseObject):
-    def __init__(self, romanji: str, english: str, native: str, user_preferred: str):
+    def __init__(self, romaji: str, english: str, native: str, user_preferred: str):
         """
         The official titles of the media in various languages.
 
         Args:
-            romanji: Romanization of the native language title.
+            romaji: Romanization of the native language title.
             english: The official english title.
             native: Official title in its native language.
             user_preferred: Title in the users preferred language. Authenticated users
@@ -22,13 +22,13 @@ class MediaTitle(BaseObject):
 
         # Type-check
         if not all(
-            isinstance(x, str) for x in (romanji, english, native, user_preferred)
+            isinstance(x, str) for x in (romaji, english, native, user_preferred)
         ):
             raise TypeError
 
         # Assigning the values to object - the instance-variables are named such that
         # they can be mapped back using `stringify` method.
-        self.romaji = romanji
+        self.romaji = romaji
         self.english = english
         self.native = native
         self.userPreferred = user_preferred
@@ -45,7 +45,7 @@ class MediaTitle(BaseObject):
             final_data = data
 
         return MediaTitle(
-            romanji=final_data["romaji"],
+            romaji=final_data["romaji"],
             english=final_data["english"],
             native=final_data["native"],
             user_preferred=final_data["userPreferred"],
@@ -342,8 +342,9 @@ class MediaRank(BaseObject):
 
 
 class MediaData(BaseObject):
-    def __init__(self, param: int):
+    def __init__(self, param: int, test_val: int = 2):
         self.param = param
+        self.test = test_val
 
     @staticmethod
     def initialize(data: Union[str, Dict[Any, Any]]) -> Any:

@@ -18,9 +18,6 @@ class MediaSeason(BaseEnum):
     SUMMER = auto()
     FALL = auto()
 
-    def stringify(self: MediaSeason) -> str:
-        return f'"season": "{self.translate}"'
-
 
 class MediaFormat(BaseEnum):
     """
@@ -38,9 +35,6 @@ class MediaFormat(BaseEnum):
     NOVEL = auto()
     ONE_SHOT = auto()
 
-    def stringify(self) -> str:
-        return f'"format": "{self.translate}"'
-
 
 class MediaStatus(BaseEnum):
     """
@@ -52,9 +46,6 @@ class MediaStatus(BaseEnum):
     NOT_RELEASED = auto()  # Mapping this one internally
     CANCELLED = auto()
     HIATUS = auto()
-
-    def stringify(self) -> str:
-        return f'"status": "{self.translate}"'
 
     @property
     def translate(self):
@@ -96,9 +87,6 @@ class MediaSource(BaseEnum):
     NOVEL = auto()
     DOUJINSHI = auto()
     ANIME = auto()
-
-    def stringify(self) -> str:
-        return f'"source": "{self.translate}"'
 
 
 class MediaSort(BaseEnum):
@@ -160,9 +148,6 @@ class MediaType(BaseEnum):
     ANIME = auto()
     MANGA = auto()
 
-    def stringify(self) -> str:
-        return f'"type": "{self.translate}"'
-
 
 class MediaRankType(BaseEnum):
     """
@@ -175,6 +160,3 @@ class MediaRankType(BaseEnum):
 
     RATED = auto()
     POPULAR = auto()
-
-    def stringify(self) -> str:
-        return f'"type": "{self.translate}"'

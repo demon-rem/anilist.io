@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from enum import EnumMeta, Flag
 from typing import Optional, TypeVar
 
@@ -37,12 +37,11 @@ class BaseEnum(Flag, metaclass=EnumMeta):
         to map an enum entry to a string that will be used with API calls.
     """
 
-    @abstractmethod
     def stringify(self) -> Optional[str]:
-        raise NotImplementedError
+        return self.translate
 
     @property
-    def translate(self):
+    def translate(self) -> str:
         """
         Maps an enum key to an appropriate value. Used to convert an enum entry into a
         string - used while making the final API call.

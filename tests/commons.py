@@ -3,7 +3,9 @@
 from typing import Any, List, Type, Union
 
 from collections import deque
+from json import loads as json_load
 
+from anilist.client import BaseObject
 from pytest import raises as _raises
 
 
@@ -61,3 +63,29 @@ def catch(exception: Any, method: Any, *args: Any):
             # Executing every method with the argument, and expecting each of them to
             # raise an error
             current_method(*args) if args else current_method()
+
+
+def check_initialize(obj: BaseObject) -> bool:
+    """
+    Helper method made to test the `stringify` and `initialize` methods of classes
+    that derive from `BaseObject`
+
+    Acts as a simple wrapper, will take in an object as the argument, this object
+    will be compared against two new objects formed from the same object.
+
+    Args:
+        obj: An instance of the class over which the check is to be performed.
+
+    Returns:
+        Boolean. True if test passes, false otherwise.
+    """
+
+    if not isinstance(obj, BaseObject):
+        return False
+
+    obj: BaseObject
+    return (
+        obj.stringify()
+        == obj.initialize(obj.stringify()).stringify()
+        == obj.initialize(json_load(obj.stringify())).stringify()
+    )

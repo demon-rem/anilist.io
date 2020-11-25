@@ -7,6 +7,8 @@ Used to define the common behaviour among all objects.
 
 from abc import ABC, abstractmethod
 from ast import literal_eval
+from enum import Enum
+from . import BaseEnum
 from json import dumps as prettify_json
 from typing import Any, Union, Dict
 
@@ -25,22 +27,32 @@ class BaseObject(ABC):
             String containing prettified-version of the JSON data.
         """
 
-        print(f"Calling stringify for `{self.__class__.__name__}`")
         if indent is not None and not isinstance(indent, int):
             raise TypeError
 
         # Using built-in method(s), generate a dictionary of instance variables present
-        # in the object- name of the variable being the key with its value being the
+        # in the object-name of the variable being the key with its value being the
         # the value in the dictionary. Then, converting this into a JSON response
         return prettify_json(
             obj={
                 f"{key}": value
-                if not isinstance(value, BaseObject)
-                else literal_eval(value.stringify())
+                # Allowing the JSON library to automatically map primitive types
+                if isinstance(value, (int, str, list, dict, tuple))
+                # If the object is derived from `BaseObject`, calling the `stringify()`
+                # method on the object to get its string representation - the response
+                # will contain escape sequences (such as "\n"), using `literal_eval` to
+                # convert them into a printable string.
+                else literal_eval(value.stringify()) if isinstance(value, BaseObject)
+                # If the object is derived from an enum, calling the `stringify()`
+                # method on this - not using `literal_eval` as the result will simply
+                # be a string.
+                else value.stringify() if isinstance(value, BaseEnum)
+                # If the flow-of-control reaches this part, adding this as an error
+                else f"Error: `{type(value)}` has no method `stringify()`"
                 for key, value in self.__dict__.items()
                 # Appending any instance variable if it does not start with an
                 # underscore - private and protected variables are not exposed.
-                if not key.startswith("_") and not callable(key)
+                if key[0] != "_" and not callable(key)
             },
             indent=indent,
             sort_keys=True,
